@@ -209,6 +209,7 @@ class Server(object):
         if self._max_url_len:
             wsgi_kwargs['url_length_limit'] = self._max_url_len
 
+        # 启动服务eventlet.wsgi.server
         self._server = eventlet.spawn(**wsgi_kwargs)
 
     def stop(self):

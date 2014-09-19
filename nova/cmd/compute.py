@@ -62,11 +62,14 @@ def main():
 
     gmr.TextGuruMeditation.setup_autorun(version)
 
+    # 检查nova-conductor的配置，nova-compute的数据库访问通过
+    # nova-conductor中转
     if not CONF.conductor.use_local:
         block_db_access()
         objects_base.NovaObject.indirection_api = \
             conductor_rpcapi.ConductorAPI()
 
+    # 创建并启动nova-compute服务
     server = service.Service.create(binary='nova-compute',
                                     topic=CONF.compute_topic,
                                     db_allowed=CONF.conductor.use_local)

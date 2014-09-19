@@ -40,6 +40,8 @@ def generate_request_id():
 class RequestContext(object):
     """Security context and request information.
 
+    请求的安全上下文。
+
     Represents the user taking a given action within the system.
 
     """
@@ -97,6 +99,7 @@ class RequestContext(object):
         self.project_name = project_name
         self.is_admin = is_admin
         if self.is_admin is None:
+            # 检查Admin
             self.is_admin = policy.check_is_admin(self)
         if overwrite or not hasattr(local.store, 'context'):
             self.update_store()

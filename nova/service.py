@@ -122,6 +122,8 @@ CONF.import_opt('host', 'nova.netconf')
 class Service(service.Service):
     """Service object for binaries running on hosts.
 
+    nova-compute的服务类
+
     A service takes a manager and enables rpc by listening to queues based
     on topic. It also periodically runs tasks on the manager and reports
     it state to the database services table.
@@ -145,6 +147,8 @@ class Service(service.Service):
         # of the servicegroup API.
         self.servicegroup_api = servicegroup.API(db_allowed=db_allowed)
         manager_class = importutils.import_class(self.manager_class_name)
+
+        # 初始化compute manager，默认ComputeManager
         self.manager = manager_class(host=self.host, *args, **kwargs)
         self.rpcserver = None
         self.report_interval = report_interval
@@ -153,9 +157,12 @@ class Service(service.Service):
         self.periodic_interval_max = periodic_interval_max
         self.saved_args, self.saved_kwargs = args, kwargs
         self.backdoor_port = None
+
+        # ping数据库，看数据库是否联通
         self.conductor_api = conductor.API(use_local=db_allowed)
         self.conductor_api.wait_until_ready(context.get_admin_context())
 
+    # 启动服务
     def start(self):
         verstr = version.version_string_with_package()
         LOG.audit(_('Starting %(topic)s node (version %(version)s)'),
@@ -163,8 +170,11 @@ class Service(service.Service):
         self.basic_config_check()
         self.manager.init_host()
         self.model_disconnected = False
-        ctxt = context.get_admin_context()
+        ctxt = context.get_admin_context() # 将以Admin用户执行
+
+        # 从nova-conductor获取服务的注册信息，不存在则重新注册
         try:
+            # 获取本服务的ID
             self.service_ref = self.conductor_api.service_get_by_args(ctxt,
                     self.host, self.binary)
             self.service_id = self.service_ref['id']
@@ -178,6 +188,8 @@ class Service(service.Service):
                 self.service_ref = self.conductor_api.service_get_by_args(ctxt,
                     self.host, self.binary)
 
+        # 执行运行前的操作，在ComputeManager中
+        # 是更新本节点可用资源信息
         self.manager.pre_start_hook()
 
         if self.backdoor_port is not None:
@@ -238,6 +250,8 @@ class Service(service.Service):
                db_allowed=True):
         """Instantiates class and passes back application object.
 
+        被compute.py调用来创建nova-compute服务实例
+
         :param host: defaults to CONF.host
         :param binary: defaults to basename of executable
         :param topic: defaults to bin_name - 'nova-' part
@@ -256,8 +270,8 @@ class Service(service.Service):
             topic = binary.rpartition('nova-')[2]
         if not manager:
             manager_cls = ('%s_manager' %
-                           binary.rpartition('nova-')[2])
-            manager = CONF.get(manager_cls, None)
+                           binary.rpartition('nova-')[2]) # compute_manager
+            manager = CONF.get(manager_cls, None) # 默认ComputeManager
         if report_interval is None:
             report_interval = CONF.report_interval
         if periodic_enable is None:

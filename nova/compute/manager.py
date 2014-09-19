@@ -548,7 +548,7 @@ class ComputeVirtAPI(virtapi.VirtAPI):
                 if decision is False:
                     break
 
-
+# nova-compute默认的manager
 class ComputeManager(manager.Manager):
     """Manages the running instances from creation to destruction."""
 
@@ -1056,6 +1056,7 @@ class ComputeManager(manager.Manager):
     def cleanup_host(self):
         self.driver.cleanup_host(host=self.host)
 
+    # 创建服务后，启动服务前执行
     def pre_start_hook(self):
         """After the service is initialized, but before we fully bring
         the service up by listening on RPC queues, make sure to update
